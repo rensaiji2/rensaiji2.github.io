@@ -1,0 +1,2121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Call Quality Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --bg-elevated: #111827;
+      --bg-card: #151c2c;
+      --bg-input: #1a2338;
+      --bg-hover: #1e2a45;
+      --border: #1e293b;
+      --border-focus: #3b82f6;
+      --text: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent-blue: #3b82f6;
+      --accent-cyan: #06b6d4;
+      --accent-green: #10b981;
+      --accent-yellow: #f59e0b;
+      --accent-red: #ef4444;
+      --accent-purple: #8b5cf6;
+      --accent-pink: #ec4899;
+      --glow-blue: rgba(59,130,246,0.15);
+      --glow-green: rgba(16,185,129,0.15);
+      --glow-yellow: rgba(245,158,11,0.15);
+      --glow-red: rgba(239,68,68,0.15);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ===== ANIMATED BACKGROUND ===== */
+    .bg-orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.15;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .orb-1 { width: 600px; height: 600px; background: var(--accent-blue); top: -15%; left: -10%; animation: orbFloat 20s ease-in-out infinite; }
+    .orb-2 { width: 500px; height: 500px; background: var(--accent-purple); bottom: -15%; right: -5%; animation: orbFloat 25s ease-in-out infinite reverse; }
+    .orb-3 { width: 400px; height: 400px; background: var(--accent-cyan); top: 40%; left: 50%; animation: orbFloat 18s ease-in-out infinite 5s; }
+
+    @keyframes orbFloat {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      25% { transform: translate(60px, -40px) scale(1.1); }
+      50% { transform: translate(-30px, 50px) scale(0.9); }
+      75% { transform: translate(40px, 30px) scale(1.05); }
+    }
+
+    /* ===== PARTICLES ===== */
+    .particles { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+    .particle {
+      position: absolute;
+      width: 2px; height: 2px;
+      background: var(--accent-blue);
+      border-radius: 50%;
+      opacity: 0.4;
+      animation: particleAnim 15s linear infinite;
+    }
+    @keyframes particleAnim {
+      0% { transform: translateY(100vh) translateX(0); opacity: 0; }
+      10% { opacity: 0.4; }
+      90% { opacity: 0.4; }
+      100% { transform: translateY(-10vh) translateX(50px); opacity: 0; }
+    }
+
+    /* ===== DESKTOP LAYOUT ===== */
+    .app {
+  position: relative;
+  z-index: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 30px 40px;
+  display: grid;
+  grid-template-columns: 320px 1fr 320px;
+  grid-template-rows: auto 1fr;
+  gap: 24px;
+  min-height: 100vh;
+  align-items: stretch; /* ADD THIS */
+}
+
+    /* ===== HEADER ===== */
+    .header {
+      grid-column: 1 / -1;
+      text-align: center;
+      margin-bottom: 8px;
+      animation: fadeInDown 0.8s ease-out;
+    }
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(59,130,246,0.1);
+      border: 1px solid rgba(59,130,246,0.2);
+      color: var(--accent-blue);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      padding: 6px 16px;
+      border-radius: 100px;
+      margin-bottom: 16px;
+      animation: pulseBadge 2s ease-in-out infinite;
+    }
+    .header-badge::before {
+      content: '';
+      width: 6px; height: 6px;
+      background: var(--accent-blue);
+      border-radius: 50%;
+      animation: pulseDot 2s ease-in-out infinite;
+    }
+    @keyframes pulseBadge {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.2); }
+      50% { box-shadow: 0 0 0 8px rgba(59,130,246,0); }
+    }
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+    .header h1 {
+      font-size: 2.4rem;
+      font-weight: 800;
+      letter-spacing: -1px;
+      background: linear-gradient(135deg, #f1f5f9 0%, #3b82f6 50%, #06b6d4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+    .header p {
+      color: var(--text-secondary);
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+
+    /* ===== LEFT COLUMN: SCORE RING ===== */
+    .left-col {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      animation: fadeInLeft 0.8s ease-out 0.1s both;
+    }
+
+    /* ===== SCORE RING ===== */
+    .score-ring-section {
+      display: flex;
+      justify-content: center;
+      padding: 20px 0;
+    }
+    .score-ring-wrapper {
+      position: relative;
+      width: 240px; height: 240px;
+    }
+    .score-ring-svg {
+      transform: rotate(-90deg);
+      width: 100%; height: 100%;
+      filter: drop-shadow(0 0 10px var(--glow-blue));
+      transition: filter 0.5s ease;
+    }
+    .score-ring-svg.pass { filter: drop-shadow(0 0 15px var(--glow-green)); }
+    .score-ring-svg.warning { filter: drop-shadow(0 0 15px var(--glow-yellow)); }
+    .score-ring-svg.fail { filter: drop-shadow(0 0 15px var(--glow-red)); }
+    .score-ring-bg {
+      fill: none;
+      stroke: var(--bg-input);
+      stroke-width: 12;
+    }
+    .score-ring-fill {met
+      fill: none;
+      stroke-width: 12;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.5s ease;
+    }
+    .score-ring-text {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+    .score-ring-percentage {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 3rem;
+      font-weight: 700;
+      line-height: 1;
+      transition: color 0.5s ease;
+    }
+    .score-ring-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-top: 4px;
+    }
+    .score-ring-status {
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-top: 8px;
+      padding: 4px 16px;
+      border-radius: 100px;
+      display: inline-block;
+      transition: all 0.5s ease;
+    }
+
+    /* ===== CARDS ===== */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      transition: all 0.3s ease;
+      animation: fadeInUp 0.6s ease-out both;
+    }
+    .card:hover {
+      border-color: rgba(59,130,246,0.2);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+    .card:nth-child(3) { animation-delay: 0.3s; }
+    .card:nth-child(4) { animation-delay: 0.4s; }
+    .card:nth-child(5) { animation-delay: 0.5s; }
+    .card:nth-child(6) { animation-delay: 0.6s; }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .card-title {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: var(--text-muted);
+    }
+    .card-icon {
+      width: 40px; height: 40px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .card:hover .card-icon {
+      transform: scale(1.1) rotate(5deg);
+    }
+    .icon-blue { background: rgba(59,130,246,0.12); }
+    .icon-green { background: rgba(16,185,129,0.12); }
+    .icon-purple { background: rgba(139,92,246,0.12); }
+    .icon-cyan { background: rgba(6,182,212,0.12); }
+
+    /* ===== INPUTS ===== */
+    .input-group { margin-bottom: 14px; }
+    .input-group:last-child { margin-bottom: 0; }
+    .input-label {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .input-wrapper { position: relative; }
+    .input-field {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 16px;
+      padding-left: 44px;
+      color: var(--text);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      font-weight: 500;
+      transition: all 0.25s ease;
+      outline: none;
+    }
+    .input-field::placeholder {
+      color: var(--text-muted);
+      font-family: 'Inter', sans-serif;
+      font-weight: 400;
+    }
+    .input-field:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px var(--glow-blue), 0 0 20px rgba(59,130,246,0.1);
+      transform: translateY(-1px);
+    }
+    .input-field.auto-calculated {
+      border-color: rgba(16,185,129,0.4);
+      box-shadow: 0 0 0 2px rgba(16,185,129,0.1);
+    }
+    .input-field:read-only {
+      opacity: 0.7;
+      cursor: default;
+    }
+    .input-field:read-only:focus {
+      border-color: var(--border);
+      box-shadow: none;
+      transform: none;
+    }
+    .input-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 1.1rem;
+      opacity: 0.6;
+      pointer-events: none;
+      transition: opacity 0.2s ease, transform 0.3s ease;
+    }
+    .input-field:focus ~ .input-icon { opacity: 1; transform: translateY(-50%) scale(1.15); }
+    .input-suffix {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      pointer-events: none;
+    }
+    .auto-badge {
+      position: absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.6rem;
+      color: var(--accent-green);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      pointer-events: none;
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+    .auto-calculated ~ .auto-badge { display: block; }
+    .auto-calculated ~ .input-suffix { display: none; }
+
+    /* Hide number input spinners */
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+
+    /* ===== CENTER COLUMN: STATS GRID ===== */
+    .center-col {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      animation: fadeInUp 0.8s ease-out 0.2s both;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+    }
+    .stat-item {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px 12px;
+      text-align: center;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .stat-item::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .stat-item:hover {
+      transform: translateY(-6px) scale(1.02);
+      border-color: rgba(59,130,246,0.3);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.25);
+    }
+    .stat-item:hover::before { opacity: 1; }
+    .stat-item:active {
+      transform: translateY(-2px) scale(0.98);
+    }
+    .stat-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 2.2rem;
+      font-weight: 700;
+      color: var(--text);
+      line-height: 1;
+      margin-bottom: 8px;
+      transition: all 0.3s ease;
+    }
+    .stat-label {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .stat-controls {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+    .stat-btn {
+      width: 32px; height: 32px;
+      border: none;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+    .stat-btn.minus {
+      background: var(--bg-hover);
+      color: var(--text-secondary);
+    }
+    .stat-btn.minus:hover { background: #2d3748; transform: scale(1.15); }
+    .stat-btn.plus {
+      color: white;
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .stat-btn.plus:hover { transform: scale(1.2); }
+    .stat-btn.plus:active { transform: scale(0.95); }
+    .stat-btn.plus.release { background: linear-gradient(135deg, #10b981, #059669); }
+    .stat-btn.plus.release:hover { box-shadow: 0 4px 16px rgba(16,185,129,0.5); }
+    .stat-btn.plus.drop { background: linear-gradient(135deg, #ef4444, #dc2626); }
+    .stat-btn.plus.drop:hover { box-shadow: 0 4px 16px rgba(239,68,68,0.5); }
+    .stat-btn.plus.calls { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+    .stat-btn.plus.calls:hover { box-shadow: 0 4px 16px rgba(139,92,246,0.5); }
+
+    /* ===== RIGHT COLUMN ===== */
+    .right-col {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      animation: fadeInRight 0.8s ease-out 0.3s both;
+    }
+
+    /* ===== TARGET BOX ===== */
+    .target-box {
+      text-align: center;
+      padding: 24px;
+      border-radius: 16px;
+      border: 2px solid;
+      transition: all 0.5s ease;
+      position: relative;
+      overflow: hidden;
+    
+    }
+    .target-box::after {
+      content: '';
+      position: absolute;
+      top: -50%; left: -50%;
+      width: 200%; height: 200%;
+      background: conic-gradient(from 0deg, transparent, rgba(255,255,255,0.03), transparent);
+      animation: rotate 8s linear infinite;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    .target-box:hover::after { opacity: 1; }
+    @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    .target-box.on-track {
+      border-color: var(--accent-green);
+      background: linear-gradient(135deg, rgba(16,185,129,0.08), rgba(16,185,129,0.02));
+    }
+    .target-box.needs-work {
+      border-color: var(--accent-yellow);
+      background: linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.02));
+    }
+    .target-box.critical {
+      border-color: var(--accent-red);
+      background: linear-gradient(135deg, rgba(239,68,68,0.08), rgba(239,68,68,0.02));
+    }
+    .target-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+      font-weight: 600;
+    }
+    .target-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin: 10px 0;
+      line-height: 1.3;
+      position: relative;
+      z-index: 1;
+    }
+    .target-box.on-track .target-value { color: var(--accent-green); }
+    .target-box.needs-work .target-value { color: var(--accent-yellow); }
+    .target-box.critical .target-value { color: var(--accent-red); }
+    .target-detail {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ===== INFO BOX ===== */
+    .info-box {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      background: rgba(59,130,246,0.05);
+      border: 1px solid rgba(59,130,246,0.15);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-top: 16px;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      transition: all 0.3s ease;
+    }
+    .info-box:hover {
+      border-color: rgba(59,130,246,0.3);
+      background: rgba(59,130,246,0.08);
+      transform: translateX(4px);
+    }
+    .info-box strong { color: var(--text); }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes fadeInDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeInLeft {
+      from { opacity: 0; transform: translateX(-30px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes fadeInRight {
+      from { opacity: 0; transform: translateX(30px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes countUp {
+      from { opacity: 0; transform: translateY(10px) scale(0.9); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes bounceIn {
+      0% { opacity: 0; transform: scale(0.3); }
+      50% { transform: scale(1.05); }
+      70% { transform: scale(0.9); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+    @keyframes glowPulse {
+      0%, 100% { box-shadow: 0 0 5px rgba(59,130,246,0.2); }
+      50% { box-shadow: 0 0 20px rgba(59,130,246,0.4); }
+    }
+
+    .animate-number {
+      animation: countUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .bounce-in {
+      animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+
+    /* ===== RESET BUTTON ===== */
+    .reset-btn {
+      width: 100%;
+      padding: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      color: var(--text-secondary);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .reset-btn:hover {
+      border-color: var(--accent-red);
+      color: var(--accent-red);
+      background: rgba(239,68,68,0.05);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(239,68,68,0.15);
+    }
+    .reset-btn:active {
+      transform: translateY(0);
+    }
+
+    /* ===== PROGRESS BAR ===== */
+    .progress-track {
+      width: 100%;
+      height: 8px;
+      background: var(--bg-input);
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 12px;
+      position: relative;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1), background 0.5s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .progress-fill::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      animation: shimmer 2s infinite;
+    }
+
+    /* ===== MINI CHART ===== */
+    .mini-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+      height: 240px;
+      padding: 8px 0;
+      justify-content: center;
+    }
+    .mini-bar {
+      width: 8px;
+      border-radius: 4px 4px 0 0;
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      opacity: 0.7;
+    }
+    .mini-bar:hover {
+      opacity: 1;
+      transform: scaleY(1.1);
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 1200px) {
+      .app {
+        grid-template-columns: 280px 1fr 280px;
+        padding: 24px 24px;
+        gap: 16px;
+      }
+      .score-ring-wrapper { width: 200px; height: 200px; }
+      .score-ring-percentage { font-size: 2.4rem; }
+      .stat-value { font-size: 1.8rem; }
+    }
+
+    @media (max-width: 900px) {
+      .app {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto 1fr;
+      }
+      .header { grid-column: 1 / -1; }
+      .left-col { grid-column: 1; grid-row: 2; }
+      .center-col { grid-column: 2; grid-row: 2 / span 2; }
+      .right-col { grid-column: 1; grid-row: 3; }
+      .score-ring-wrapper { width: 180px; height: 180px; }
+      .score-ring-percentage { font-size: 2rem; }
+    }
+
+    @media (max-width: 640px) {
+      .app {
+        display: flex;
+        flex-direction: column;
+        padding: 20px 16px;
+        max-width: 520px;
+      }
+      .header h1 { font-size: 1.6rem; }
+      .score-ring-wrapper { width: 160px; height: 160px; }
+      .score-ring-percentage { font-size: 2rem; }
+      .stats-grid { gap: 8px; }
+      .stat-value { font-size: 1.4rem; }
+      .card { padding: 18px; }
+      }
+
+      .orb-pass { background: var(--accent-green); }
+.orb-warning { background: var(--accent-yellow); }
+.orb-fail { background: var(--accent-red); }
+.orb-start { background: var(--accent-blue); }
+
+
+
+    /* ===== DAILY GOAL / SHIFT TARGET ===== */
+    .daily-goal-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 240px; /* change this value */
+}
+    .goal-input-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .goal-input-group .input-field {
+      flex: 1;
+      padding: 10px 14px;
+      padding-left: 14px;
+      font-size: 0.85rem;
+    }
+    .goal-input-group .input-label {
+      font-size: 0.7rem;
+      white-space: nowrap;
+    }
+    .goal-progress-wrapper {
+      margin-top: 8px;
+    }
+    .goal-progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .goal-progress-track {
+      width: 100%;
+      height: 10px;
+      background: var(--bg-input);
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .goal-progress-fill {
+      height: 100%;
+      border-radius: 5px;
+      transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1), background 0.5s ease;
+      position: relative;
+    }
+    .goal-progress-fill::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      animation: shimmer 2s infinite;
+    }
+    .goal-milestones {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+    }
+    .goal-milestone {
+      font-size: 0.6rem;
+      color: var(--text-muted);
+      text-align: center;
+      transition: color 0.3s ease;
+    }
+    .goal-milestone.reached { color: var(--accent-green); font-weight: 600; }
+    .goal-milestone.reached::before { content: '✓ '; }
+
+    /* ===== STREAK COUNTER ===== */
+    .streak-banner {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(239,68,68,0.08));
+      border: 1px solid rgba(245,158,11,0.3);
+      border-radius: 14px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      animation: fadeInUp 0.5s ease-out, glowPulse 2s ease-in-out infinite;
+    }
+    .streak-banner.active { display: flex; }
+    .streak-icon { font-size: 1.4rem; animation: float 2s ease-in-out infinite; }
+    .streak-text { flex: 1; }
+    .streak-count { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 700; color: var(--accent-yellow); }
+    .streak-label { font-size: 0.7rem; color: var(--text-secondary); }
+
+    /* ===== CONFETTI ===== */
+    .confetti-container {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+      overflow: hidden;
+    }
+    .confetti-piece {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      top: -10px;
+      animation: confettiFall linear forwards;
+    }
+    @keyframes confettiFall {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+    }
+
+    /* ===== COLOR BLEED / APP GLOW ===== */
+    .app-glow {
+      position: fixed;
+      inset: -20px;
+      border-radius: 30px;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0;
+      transition: opacity 1s ease, box-shadow 1s ease, border-color 1s ease;
+      border: 2px solid transparent;
+    }
+    .app-glow.active-pass {
+      opacity: 1;
+      box-shadow: 0 0 60px rgba(16,185,129,0.15), inset 0 0 60px rgba(16,185,129,0.05);
+      border-color: rgba(16,185,129,0.2);
+      animation: glowPulse 3s ease-in-out infinite;
+    }
+    .app-glow.active-warning {
+      opacity: 1;
+      box-shadow: 0 0 60px rgba(245,158,11,0.15), inset 0 0 60px rgba(245,158,11,0.05);
+      border-color: rgba(245,158,11,0.2);
+      animation: glowPulse 3s ease-in-out infinite;
+    }
+    .app-glow.active-fail {
+      opacity: 1;
+      box-shadow: 0 0 60px rgba(239,68,68,0.15), inset 0 0 60px rgba(239,68,68,0.05);
+      border-color: rgba(239,68,68,0.2);
+      animation: glowPulse 3s ease-in-out infinite;
+    }
+
+    /* ===== SESSION RESTORE MODAL ===== */
+    .restore-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(8px);
+      z-index: 10000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.3s ease;
+    }
+    .restore-modal-overlay.show { display: flex; }
+    .restore-modal {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 32px;
+      max-width: 420px;
+      width: 90%;
+      text-align: center;
+      animation: bounceIn 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+    }
+    .restore-modal-icon {
+      font-size: 3rem;
+      margin-bottom: 16px;
+    }
+    .restore-modal h3 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+    .restore-modal p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+    .restore-modal-stats {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-bottom: 24px;
+      padding: 16px;
+      background: var(--bg-input);
+      border-radius: 14px;
+    }
+    .restore-modal-stat {
+      text-align: center;
+    }
+    .restore-modal-stat-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--accent-blue);
+    }
+    .restore-modal-stat-label {
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .restore-modal-buttons {
+      display: flex;
+      gap: 12px;
+    }
+    .restore-btn {
+      flex: 1;
+      padding: 14px 20px;
+      border-radius: 14px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: none;
+    }
+    .restore-btn-restore {
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+      color: white;
+    }
+    .restore-btn-restore:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(59,130,246,0.3);
+    }
+    .restore-btn-discard {
+      background: var(--bg-input);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+    .restore-btn-discard:hover {
+      border-color: var(--accent-red);
+      color: var(--accent-red);
+      background: rgba(239,68,68,0.05);
+    }
+
+    /* ===== SHIFT GOAL BADGE ===== */
+    .shift-goal-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(16,185,129,0.1);
+      border: 1px solid rgba(16,185,129,0.2);
+      color: var(--accent-green);
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 100px;
+      margin-top: 8px;
+    }
+    .shift-goal-badge.hidden { display: none; }
+
+  
+    /* ===== LOGIN OVERLAY ===== */
+    .login-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 20000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.6s ease;
+    }
+    .login-overlay.hidden {
+      display: none;
+    }
+    .login-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 420px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+      animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+    .login-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan), var(--accent-purple));
+    }
+    .login-logo {
+      font-size: 3rem;
+      margin-bottom: 8px;
+      animation: float 3s ease-in-out infinite;
+    }
+    .login-brand {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(135deg, #f1f5f9 0%, #3b82f6 50%, #06b6d4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 4px;
+    }
+    .login-subtitle {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-bottom: 32px;
+    }
+    .login-input-group {
+      margin-bottom: 16px;
+      text-align: left;
+    }
+    .login-input-group label {
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      margin-bottom: 8px;
+    }
+    .login-input {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 16px;
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      font-weight: 500;
+      transition: all 0.25s ease;
+      outline: none;
+    }
+    .login-input::placeholder {
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+    .login-input:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 3px var(--glow-blue), 0 0 20px rgba(59,130,246,0.1);
+      transform: translateY(-1px);
+    }
+    .login-input.error {
+      border-color: var(--accent-red);
+      box-shadow: 0 0 0 3px var(--glow-red);
+      animation: shake 0.4s ease;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-8px); }
+      40% { transform: translateX(8px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+    .login-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+      border: none;
+      border-radius: 14px;
+      color: white;
+      font-family: 'Inter', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      margin-top: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    .login-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(59,130,246,0.3);
+    }
+    .login-btn:active {
+      transform: translateY(0);
+    }
+    .login-btn::after {
+      content: '';
+      position: absolute;
+      top: -50%; left: -50%;
+      width: 200%; height: 200%;
+      background: conic-gradient(from 0deg, transparent, rgba(255,255,255,0.1), transparent);
+      animation: rotate 4s linear infinite;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .login-btn:hover::after {
+      opacity: 1;
+    }
+    .login-error-msg {
+      color: var(--accent-red);
+      font-size: 0.8rem;
+      font-weight: 500;
+      margin-top: 12px;
+      min-height: 20px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    .login-error-msg.show {
+      opacity: 1;
+    }
+    .login-hint {
+      margin-top: 20px;
+      padding: 12px;
+      background: rgba(59,130,246,0.05);
+      border: 1px solid rgba(59,130,246,0.15);
+      border-radius: 12px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+    .login-hint strong {
+      color: var(--text-secondary);
+    }
+    .login-particles {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: -1;
+    }
+    .login-particle {
+      position: absolute;
+      width: 2px; height: 2px;
+      background: var(--accent-blue);
+      border-radius: 50%;
+      opacity: 0.3;
+      animation: particleAnim 12s linear infinite;
+    }
+
+    /* ===== LOGOUT BUTTON ===== */
+    .logout-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 100;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 18px;
+      color: var(--text-secondary);
+      font-family: 'Inter', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      backdrop-filter: blur(10px);
+    }
+    .logout-btn:hover {
+      border-color: var(--accent-red);
+      color: var(--accent-red);
+      background: rgba(239,68,68,0.08);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(239,68,68,0.15);
+    }
+    .logout-btn:active {
+      transform: translateY(0);
+    }
+</style>
+<base target="_blank">
+<base target="_blank">
+<base target="_blank">
+<base target="_blank">
+<base target="_blank">
+<base target="_blank">
+</head>
+<body>
+
+  <!-- Login Overlay -->
+  <div class="login-overlay" id="loginOverlay">
+    <div class="login-particles" id="loginParticles"></div>
+    <div class="login-card">
+      <div class="login-logo">📡</div>
+      <div class="login-brand">SAMPLE</div>
+      <div class="login-subtitle">Call Quality Tracker</div>
+
+      <div class="login-input-group">
+        <label for="loginUser">Username</label>
+        <input type="text" id="loginUser" class="login-input" placeholder="Enter username" autocomplete="off">
+      </div>
+
+      <div class="login-input-group">
+        <label for="loginPass">Password</label>
+        <input type="password" id="loginPass" class="login-input" placeholder="Enter password" autocomplete="off">
+      </div>
+
+      <button class="login-btn" id="loginBtn" onclick="attemptLogin()">🔐 Sign In</button>
+      <div class="login-error-msg" id="loginError"></div>
+
+      
+    </div>
+  </div>
+
+  <!-- Background Effects -->
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-3"></div>
+  <div class="particles" id="particles"></div>
+  <div class="app-glow" id="appGlow"></div>
+  <div class="confetti-container" id="confettiContainer"></div>
+
+  <!-- Restore Modal -->
+  <div class="restore-modal-overlay" id="restoreModal">
+    <div class="restore-modal">
+      <div class="restore-modal-icon">💾</div>
+      <h3>Restore Previous Session?</h3>
+      <p>We found data from your last session. Would you like to restore it?</p>
+      <div class="restore-modal-stats">
+        <div class="restore-modal-stat">
+          <div class="restore-modal-stat-value" id="restoreRelease">0</div>
+          <div class="restore-modal-stat-label">Releases</div>
+        </div>
+        <div class="restore-modal-stat">
+          <div class="restore-modal-stat-value" id="restoreDrop">0</div>
+          <div class="restore-modal-stat-label">Drops</div>
+        </div>
+        <div class="restore-modal-stat">
+          <div class="restore-modal-stat-value" id="restoreScore">0%</div>
+          <div class="restore-modal-stat-label">Score</div>
+        </div>
+      </div>
+      <div class="restore-modal-buttons">
+        <button class="restore-btn restore-btn-restore" onclick="restoreSession()">✅ Restore</button>
+        <button class="restore-btn restore-btn-discard" onclick="discardSession()">🗑️ Discard</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="app">
+    <button class="logout-btn" id="logoutBtn" onclick="handleLogout()" title="Sign out">🚪 Log Out</button>
+
+    <!-- Header -->
+    <header class="header">
+      <div class="header-badge">Live Tracker</div>
+      <h1>Call Quality Tracker</h1>
+      <p>Track metrics, monitor scores, and calculate targets in real-time.</p>
+    </header>
+
+    <!-- Left Column -->
+    <div class="left-col">
+      <!-- Score Ring -->
+      <div class="score-ring-section">
+        <div class="score-ring-wrapper">
+          <svg class="score-ring-svg" id="scoreRingSvg" viewBox="0 0 200 200">
+            <circle class="score-ring-bg" cx="100" cy="100" r="82"></circle>
+            <circle class="score-ring-fill" id="scoreRingFill" cx="100" cy="100" r="82"
+              stroke-dasharray="515.22" stroke-dashoffset="515.22" stroke="#3b82f6"></circle>
+          </svg>
+          <div class="score-ring-text">
+            <div class="score-ring-percentage" id="ringPercentage">0.0%</div>
+            <div class="score-ring-label">Quality Score</div>
+            <div class="score-ring-status" id="ringStatus">START</div>
+          </div>
+        </div>
+      </div>
+
+      
+
+      <!-- Target Card -->
+      <div class="card" style="animation-delay: 0.7s;">
+        <div class="card-header">
+          <span class="card-title">Target: 85% Pass</span>
+          <div class="card-icon icon-green">🎯</div>
+        </div>
+        <div class="target-box" id="targetBox">
+          <div class="target-label">📊 To Reach 85% Pass</div>
+          <div class="target-value" id="targetValue">Start tracking</div>
+          <div class="target-detail" id="targetDetail">Enter metrics above to see your progress</div>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="progressFill" style="width: 0%; background: var(--accent-blue);"></div>
+        </div>
+      </div>
+
+      
+    </div>
+
+    <!-- Center Column -->
+    <div class="center-col">
+      <!-- Streak Banner -->
+      <div class="streak-banner" id="streakBanner">
+        <span class="streak-icon">🔥</span>
+        <div class="streak-text">
+          <span class="streak-count" id="streakCount">0</span>
+          <span class="streak-label"> releases in a row without a drop</span>
+        </div>
+      </div>
+
+    <!-- Stats Grid Card -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Live Stats</span>
+          <div class="card-icon icon-cyan">⚡</div>
+        </div>
+        <div class="stats-grid">
+          <div class="stat-item" onclick="updateStatsValue('release', 1)" title="Click to +1 Release">
+            <div class="stat-label">RELEASE</div>
+            <div class="stat-value" id="release-stats">0</div>
+            <div class="stat-controls">
+              <button class="stat-btn minus" onclick="event.stopPropagation(); updateStatsValue('release', -1)">−</button>
+              <button class="stat-btn plus release" onclick="event.stopPropagation(); updateStatsValue('release', 1)">+</button>
+            </div>
+          </div>
+          <div class="stat-item" onclick="updateStatsValue('drop', 1)" title="Click to +1 Drop">
+            <div class="stat-label">DROP</div>
+            <div class="stat-value" id="drop-stats">0</div>
+            <div class="stat-controls">
+              <button class="stat-btn minus" onclick="event.stopPropagation(); updateStatsValue('drop', -1)">−</button>
+              <button class="stat-btn plus drop" onclick="event.stopPropagation(); updateStatsValue('drop', 1)">+</button>
+            </div>
+          </div>
+          <div class="stat-item" onclick="updateStatsValue('calls', 1)" title="Click to +1 Call">
+            <div class="stat-label">CALLS</div>
+            <div class="stat-value" id="calls-stats">0</div>
+            <div class="stat-controls">
+              <button class="stat-btn minus" onclick="event.stopPropagation(); updateStatsValue('calls', -1)">−</button>
+              <button class="stat-btn plus calls" onclick="event.stopPropagation(); updateStatsValue('calls', 1)">+</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reverse Calculator Card -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Reverse Calculator</span>
+          <div class="card-icon icon-purple">🔮</div>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">Current Percentage</label>
+          <div class="input-wrapper">
+            <span class="input-icon">📈</span>
+            <input type="number" id="currentPct" class="input-field" placeholder="e.g. 75" min="0" max="100" step="0.1">
+            <span class="input-suffix">%</span>
+            <span class="auto-badge">auto</span>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">Calls Handled</label>
+          <div class="input-wrapper">
+            <span class="input-icon">📞</span>
+            <input type="number" id="callsHandled" class="input-field" placeholder="e.g. 100" min="0" step="1">
+            <span class="input-suffix">calls</span>
+            <span class="auto-badge">auto</span>
+          </div>
+        </div>
+<!-- Reset Button -->
+      <button class="reset-btn" onclick="resetAll()" title="Reset all metrics to default">🔄 Reset All</button>
+    </div>
+        
+      </div>
+
+      
+
+    <!-- Right Column -->
+    <div class="right-col">
+            <!-- Quick Stats Summary -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Quick Summary</span>
+          <div class="card-icon icon-green">📋</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--bg-input); border-radius: 10px;">
+            <span style="font-size: 0.75rem; color: var(--text-muted);">Pass Rate</span>
+            <span id="summaryPassRate" style="font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--accent-blue);">--</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--bg-input); border-radius: 10px;">
+            <span style="font-size: 0.75rem; color: var(--text-muted);">Total Calls</span>
+            <span id="summaryTotal" style="font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--text);">0</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; background: var(--bg-input); border-radius: 10px;">
+            <span style="font-size: 0.75rem; color: var(--text-muted);">Drop Rate</span>
+            <span id="summaryDropRate" style="font-family: 'JetBrains Mono', monospace; font-weight: 600; color: var(--accent-red);">--</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Daily Goal Card -->
+      <div class="card" style="animation-delay: 0.8s;">
+        <div class="card-header">
+          <span class="card-title">Daily Goal / Shift Target</span>
+          <div class="card-icon icon-blue">🏆</div>
+        </div>
+        <div class="daily-goal-section">
+          <div class="goal-input-group">
+            <label class="input-label" style="margin-bottom:0;">Goal</label>
+            <input type="number" id="dailyGoalInput" class="input-field" placeholder="e.g. 50" min="1" step="1" value="50" style="padding-left:14px;">
+            <span class="input-suffix" style="right:14px;">calls</span>
+          </div>
+          <div class="goal-progress-wrapper">
+            <div class="goal-progress-label">
+              <span id="goalProgressText">0 / 50 calls</span>
+              <span id="goalPercentText">0%</span>
+            </div>
+            <div class="goal-progress-track">
+              <div class="goal-progress-fill" id="goalProgressFill" style="width: 0%; background: var(--accent-blue);"></div>
+            </div>
+            <div class="goal-milestones" id="goalMilestones">
+              <span class="goal-milestone" data-pct="25">25%</span>
+              <span class="goal-milestone" data-pct="50">50%</span>
+              <span class="goal-milestone" data-pct="75">75%</span>
+              <span class="goal-milestone" data-pct="100">100%</span>
+            </div>
+          </div>
+          <div class="shift-goal-badge hidden" id="shiftGoalBadge">🎯 Shift Goal Reached!</div>
+        </div>
+      </div>
+
+      <!-- Live Trend Card -->
+      <!-- <div class="card">
+        <div class="card-header">
+          <span class="card-title">Live Trend</span>
+          <div class="card-icon icon-cyan">📈</div>
+        </div>
+        <div class="mini-chart" id="miniChart"></div>
+      </div> -->
+
+  <script>
+    // ===== PARTICLES =====
+    const particlesContainer = document.getElementById('particles');
+    for (let i = 0; i < 30; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.style.left = Math.random() * 100 + 'vw';
+      p.style.animationDelay = Math.random() * 15 + 's';
+      p.style.animationDuration = (10 + Math.random() * 10) + 's';
+      particlesContainer.appendChild(p);
+    }
+
+    // ===== DOM ELEMENTS =====
+    const currentPctInput = document.getElementById('currentPct');
+    const callsInput = document.getElementById('callsHandled');
+    const releaseStatsEl = document.getElementById('release-stats');
+    const dropStatsEl = document.getElementById('drop-stats');
+    const callsStatsEl = document.getElementById('calls-stats');
+    const ringSvg = document.getElementById('scoreRingSvg');
+    const ringFill = document.getElementById('scoreRingFill');
+    const ringPercentage = document.getElementById('ringPercentage');
+    const ringStatus = document.getElementById('ringStatus');
+    const targetBox = document.getElementById('targetBox');
+    const targetValue = document.getElementById('targetValue');
+    const targetDetail = document.getElementById('targetDetail');
+    const progressFill = document.getElementById('progressFill');
+    const miniChart = document.getElementById('miniChart');
+    const summaryPassRate = document.getElementById('summaryPassRate');
+    const summaryTotal = document.getElementById('summaryTotal');
+    const summaryDropRate = document.getElementById('summaryDropRate');
+
+    const CIRCUMFERENCE = 2 * Math.PI * 82;
+
+    // History tracking for mini chart
+    let historyData = [];
+    const MAX_HISTORY = 20;
+
+    // ===== SOURCE OF TRUTH: release, drop =====
+    let stats = { release: 0, drop: 0 };
+
+    // Track what values the inputs SHOULD show (from stats)
+    // Only update an input if it currently shows the expected value
+    // This prevents overwriting user typing
+    let expectedPct = '';
+    let expectedCalls = '';
+
+    function getCalls() {
+      return stats.release + stats.drop;
+    }
+
+    // ===== HELPER FUNCTIONS =====
+    function getVal(el) {
+      const v = parseFloat(el.value);
+      return isNaN(v) || v < 0 ? null : v;
+    }
+
+    function markAuto(el) { el.classList.add('auto-calculated'); }
+    function markManual(el) { el.classList.remove('auto-calculated'); }
+
+    // ===== CALCULATE PERCENTAGE FROM STATS =====
+    function calcPercentage() {
+      const total = stats.release + stats.drop;
+      if (total === 0) return 0;
+      return (stats.release / total) * 100;
+    }
+
+    // ===== CALCULATE DROPS/RELEASES FROM PERCENTAGE + CALLS =====
+    function calcFromPercentage(percentage, calls) {
+      const p = Math.min(Math.max(percentage, 0), 100) / 100;
+      const releases = Math.round(calls * p);
+      const drops = calls - releases;
+      return { drops: Math.max(0, drops), releases: Math.max(0, releases) };
+    }
+
+    // ===== UPDATE RING =====
+    function updateRing(percentage, status) {
+      const pct = Math.min(Math.max(percentage, 0), 100);
+      const offset = CIRCUMFERENCE - (pct / 100) * CIRCUMFERENCE;
+      ringFill.style.strokeDashoffset = offset;
+
+      let color = '#3b82f6';
+      let glowClass = '';
+      if (status === 'pass') { color = '#10b981'; glowClass = 'pass'; }
+      else if (status === 'warning') { color = '#f59e0b'; glowClass = 'warning'; }
+      else if (status === 'fail') { color = '#ef4444'; glowClass = 'fail'; }
+
+      ringFill.style.stroke = color;
+      ringSvg.className = 'score-ring-svg ' + glowClass;
+      ringPercentage.style.color = color;
+      ringPercentage.textContent = pct.toFixed(1) + '%';
+
+      ringStatus.textContent = status === 'pass' ? 'PASS' : status === 'warning' ? 'WARNING' : status === 'fail' ? 'FAIL' : 'START';
+      ringStatus.style.background = color;
+      ringStatus.style.color = status === 'warning' ? '#1a1a2e' : 'white';
+
+      // Sync background orbs to score color
+document.querySelector('.orb-1').className = 'bg-orb orb-1 orb-' + (status || 'start');
+document.querySelector('.orb-2').className = 'bg-orb orb-2 orb-' + (status || 'start');
+document.querySelector('.orb-3').className = 'bg-orb orb-3 orb-' + (status || 'start');
+
+      // Color bleed glow
+      updateAppGlow(status);
+    }
+
+    // ===== ANIMATE NUMBER =====
+    function animateNumber(element, newValue) {
+      element.classList.add('animate-number');
+      element.textContent = newValue;
+      setTimeout(() => element.classList.remove('animate-number'), 400);
+    }
+
+    // ===== MINI CHART UPDATE =====
+    function updateMiniChart(percentage) {
+      historyData.push(percentage || 0);
+      if (historyData.length > MAX_HISTORY) historyData.shift();
+
+      miniChart.innerHTML = '';
+      const maxVal = Math.max(...historyData, 100);
+      historyData.forEach((val, i) => {
+        const bar = document.createElement('div');
+        bar.className = 'mini-bar';
+        const height = (val / maxVal) * 50;
+        bar.style.height = height + 'px';
+        bar.style.background = val >= 85 ? 'var(--accent-green)' : val >= 80 ? 'var(--accent-yellow)' : 'var(--accent-red)';
+        bar.style.opacity = 0.3 + (i / historyData.length) * 0.7;
+        miniChart.appendChild(bar);
+      });
+    }
+
+    // ===== UPDATE SUMMARY =====
+    function updateSummary(drops, releases, calls, percentage) {
+      summaryTotal.textContent = calls;
+      if (calls === 0 && drops === 0 && releases === 0) {
+        // Reset state — all cleared
+        summaryPassRate.textContent = '--';
+        summaryPassRate.style.color = 'var(--accent-blue)';
+        summaryDropRate.textContent = '--';
+        summaryDropRate.style.color = 'var(--accent-red)';
+      } else if (percentage !== null) {
+        summaryPassRate.textContent = percentage.toFixed(1) + '%';
+        summaryPassRate.style.color = percentage >= 85 ? 'var(--accent-green)' : percentage >= 80 ? 'var(--accent-yellow)' : 'var(--accent-red)';
+        const dropRate = calls > 0 ? ((drops / calls) * 100).toFixed(1) + '%' : '--';
+        summaryDropRate.textContent = dropRate;
+        summaryDropRate.style.color = calls > 0 ? (percentage >= 85 ? 'var(--accent-green)' : percentage >= 80 ? 'var(--accent-yellow)' : 'var(--accent-red)') : 'var(--accent-red)';
+      } else {
+        summaryPassRate.textContent = '--';
+        summaryDropRate.textContent = '--';
+      }
+    }
+
+    // ===== UPDATE PROGRESS BAR =====
+    function updateProgressBar(percentage) {
+      const pct = Math.min(Math.max(percentage || 0, 0), 100);
+      progressFill.style.width = pct + '%';
+      progressFill.style.background = pct >= 85 ? 'var(--accent-green)' : pct >= 80 ? 'var(--accent-yellow)' : 'var(--accent-red)';
+    }
+
+
+    // ===== SESSION STORAGE =====
+    const SESSION_KEY = 'callQualityTracker_session';
+    let sessionRestored = false;
+    let eightyFiveTriggered = false;
+    let streakCount = 0;
+    let lastDropIndex = -1;
+    let dailyGoal = 50;
+
+    function saveSession() {
+      const data = {
+        stats: stats,
+        history: historyData,
+        streak: streakCount,
+        lastDrop: lastDropIndex,
+        eightyFive: eightyFiveTriggered,
+        goal: dailyGoal,
+        timestamp: Date.now()
+      };
+      localStorage.setItem(SESSION_KEY, JSON.stringify(data));
+    }
+
+    function loadSession() {
+      try {
+        const raw = localStorage.getItem(SESSION_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw);
+      } catch (e) { return null; }
+    }
+
+    function checkRestore() {
+      const saved = loadSession();
+      if (!saved) return;
+      // Only offer if data exists and is less than 24h old
+      const age = Date.now() - (saved.timestamp || 0);
+      if (age > 24 * 60 * 60 * 1000) {
+        localStorage.removeItem(SESSION_KEY);
+        return;
+      }
+      // Populate modal
+      document.getElementById('restoreRelease').textContent = saved.stats?.release || 0;
+      document.getElementById('restoreDrop').textContent = saved.stats?.drop || 0;
+      const total = (saved.stats?.release || 0) + (saved.stats?.drop || 0);
+      const pct = total > 0 ? ((saved.stats?.release || 0) / total * 100).toFixed(1) + '%' : '0%';
+      document.getElementById('restoreScore').textContent = pct;
+      document.getElementById('restoreModal').classList.add('show');
+    }
+
+    function restoreSession() {
+      const saved = loadSession();
+      if (saved) {
+        stats = saved.stats || { release: 0, drop: 0 };
+        historyData = saved.history || [];
+        streakCount = saved.streak || 0;
+        lastDropIndex = saved.lastDrop || -1;
+        eightyFiveTriggered = saved.eightyFive || false;
+        dailyGoal = saved.goal || 50;
+        document.getElementById('dailyGoalInput').value = dailyGoal;
+      }
+      document.getElementById('restoreModal').classList.remove('show');
+      sessionRestored = true;
+      render();
+    }
+
+    function discardSession() {
+      localStorage.removeItem(SESSION_KEY);
+      document.getElementById('restoreModal').classList.remove('show');
+      sessionRestored = true;
+    }
+
+    // ===== CONFETTI =====
+    function burstConfetti() {
+      const container = document.getElementById('confettiContainer');
+      const colors = ['#3b82f6', '#10b981', '#06b6d4', '#f59e0b', '#ec4899', '#8b5cf6', '#ef4444'];
+      for (let i = 0; i < 80; i++) {
+        const piece = document.createElement('div');
+        piece.className = 'confetti-piece';
+        piece.style.left = Math.random() * 100 + 'vw';
+        piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+        piece.style.width = (4 + Math.random() * 8) + 'px';
+        piece.style.height = (4 + Math.random() * 8) + 'px';
+        piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+        piece.style.animationDuration = (2 + Math.random() * 3) + 's';
+        piece.style.animationDelay = (Math.random() * 0.5) + 's';
+        container.appendChild(piece);
+        setTimeout(() => piece.remove(), 5500);
+      }
+    }
+
+    // ===== STREAK TRACKING =====
+    function updateStreak() {
+      const banner = document.getElementById('streakBanner');
+      const countEl = document.getElementById('streakCount');
+      if (streakCount >= 3) {
+        banner.classList.add('active');
+        countEl.textContent = streakCount;
+      } else {
+        banner.classList.remove('active');
+      }
+    }
+
+    // ===== APP GLOW / COLOR BLEED =====
+    function updateAppGlow(status) {
+      const glow = document.getElementById('appGlow');
+      glow.className = 'app-glow';
+      if (status === 'pass') glow.classList.add('active-pass');
+      else if (status === 'warning') glow.classList.add('active-warning');
+      else if (status === 'fail') glow.classList.add('active-fail');
+    }
+
+    // ===== DAILY GOAL =====
+    function updateDailyGoal() {
+      const goalInput = document.getElementById('dailyGoalInput');
+      dailyGoal = parseInt(goalInput.value) || 50;
+      const calls = getCalls();
+      const pct = Math.min((calls / dailyGoal) * 100, 100);
+
+      document.getElementById('goalProgressText').textContent = calls + ' / ' + dailyGoal + ' calls';
+      document.getElementById('goalPercentText').textContent = pct.toFixed(0) + '%';
+
+      const fill = document.getElementById('goalProgressFill');
+      fill.style.width = pct + '%';
+      fill.style.background = pct >= 100 ? 'var(--accent-green)' : pct >= 75 ? 'var(--accent-cyan)' : pct >= 50 ? 'var(--accent-blue)' : pct >= 25 ? 'var(--accent-purple)' : 'var(--accent-blue)';
+
+      // Milestones
+      document.querySelectorAll('.goal-milestone').forEach(m => {
+        const mpct = parseInt(m.dataset.pct);
+        if (pct >= mpct) m.classList.add('reached');
+        else m.classList.remove('reached');
+      });
+
+      const badge = document.getElementById('shiftGoalBadge');
+      if (pct >= 100) badge.classList.remove('hidden');
+      else badge.classList.add('hidden');
+    }
+
+    document.getElementById('dailyGoalInput').addEventListener('input', function() {
+      dailyGoal = parseInt(this.value) || 50;
+      updateDailyGoal();
+      saveSession();
+    });
+
+    // ===== MAIN RENDER: sync everything from stats =====
+    function render() {
+      const d = stats.drop;
+      const r = stats.release;
+      const c = getCalls();
+      const total = d + r;
+      const percentage = total > 0 ? (r / total) * 100 : 0;
+
+      // Confetti on first 85% hit
+      if (percentage >= 85 && !eightyFiveTriggered && total > 0) {
+        eightyFiveTriggered = true;
+        burstConfetti();
+      }
+
+      // Update streak & glow
+      updateStreak();
+      updateDailyGoal();
+      saveSession();
+
+      // Update stat displays
+      if (parseInt(releaseStatsEl.textContent) !== r) animateNumber(releaseStatsEl, r);
+      else releaseStatsEl.textContent = r;
+      if (parseInt(dropStatsEl.textContent) !== d) animateNumber(dropStatsEl, d);
+      else dropStatsEl.textContent = d;
+      if (parseInt(callsStatsEl.textContent) !== c) animateNumber(callsStatsEl, c);
+      else callsStatsEl.textContent = c;
+
+      // Compute what inputs SHOULD show
+      const newPct = total > 0 ? percentage.toFixed(1) : '';
+      const newCalls = c > 0 ? String(c) : '';
+
+      // Only update an input if it still shows what we last wrote there
+      // This prevents overwriting while the user is typing
+      if (currentPctInput.value === expectedPct) {
+        currentPctInput.value = newPct;
+        expectedPct = newPct;
+        markAuto(currentPctInput);
+      }
+
+      if (callsInput.value === expectedCalls) {
+        callsInput.value = newCalls;
+        expectedCalls = newCalls;
+        markAuto(callsInput);
+      }
+
+      // Determine status
+      let status = 'start';
+      if (d === 0 && r === 0) status = 'start';
+      else if (percentage >= 85) status = 'pass';
+      else if (percentage >= 80) status = 'warning';
+      else status = 'fail';
+
+      updateRing(percentage, status);
+      calculateTarget(d, r, percentage);
+      updateProgressBar(percentage);
+      updateSummary(d, r, c, percentage);
+    }
+
+    // ===== TARGET CALCULATION =====
+    function calculateTarget(drop, release, currentPercentage) {
+      const target = 85;
+
+      if (drop === 0 && release === 0) {
+        targetBox.className = 'target-box';
+        targetValue.textContent = 'Start tracking';
+        targetValue.style.color = '';
+        targetDetail.textContent = 'Enter metrics above to see your progress toward 85%';
+        return;
+      }
+
+      if (currentPercentage >= target) {
+        targetBox.className = 'target-box on-track';
+        const buffer = ((currentPercentage - target) / 100 * (drop + release)).toFixed(1);
+        targetValue.textContent = '✅ Above 85%!';
+        targetDetail.textContent = "You're " + (currentPercentage - target).toFixed(1) + "% above target (" + buffer + " call buffer)";
+        return;
+      }
+
+      const total = drop + release;
+      const needed = Math.ceil((0.85 * total - release) / 0.15);
+
+      if (needed <= 0) {
+        targetBox.className = 'target-box on-track';
+        targetValue.textContent = '✅ On Track!';
+        targetDetail.textContent = "Current: " + currentPercentage.toFixed(1) + "% — maintain your ratio";
+      } else {
+        const projectedTotal = total + needed;
+        const projectedPct = ((release + needed) / projectedTotal * 100);
+
+        if (currentPercentage >= 80) {
+          targetBox.className = 'target-box needs-work';
+          targetValue.textContent = 'Need ' + needed + ' more release' + (needed > 1 ? 's' : '');
+          targetDetail.textContent = 'Projected: ' + projectedPct.toFixed(1) + '% after ' + needed + ' more release' + (needed > 1 ? 's' : '') + ' (no more drops)';
+        } else {
+          targetBox.className = 'target-box critical';
+          targetValue.textContent = 'Need ' + needed + ' more release' + (needed > 1 ? 's' : '');
+          targetDetail.textContent = 'Critical: ' + projectedPct.toFixed(1) + '% after ' + needed + ' more release' + (needed > 1 ? 's' : '') + ' (no more drops)';
+        }
+      }
+    }
+
+    // ===== +/- BUTTONS =====
+    function updateStatsValue(type, change) {
+      const prevTotal = stats.release + stats.drop;
+      if (type === 'release') {
+        stats.release = Math.max(0, stats.release + change);
+        if (change > 0) {
+          streakCount++;
+        } else if (change < 0 && stats.release < prevTotal) {
+          // undoing a release doesn't break streak unless it was the last action
+        }
+      } else if (type === 'drop') {
+        stats.drop = Math.max(0, stats.drop + change);
+        if (change > 0) {
+          streakCount = 0;
+          lastDropIndex = stats.release + stats.drop;
+        }
+      } else if (type === 'calls') {
+        if (change > 0) {
+          stats.release += 1;
+          streakCount++;
+        } else {
+          if (stats.release > stats.drop) {
+            stats.release = Math.max(0, stats.release - 1);
+          } else {
+            stats.drop = Math.max(0, stats.drop - 1);
+            if (stats.drop === 0) streakCount = stats.release;
+          }
+        }
+      }
+      // Reset expected values so render() will update the inputs
+      expectedPct = currentPctInput.value;
+      expectedCalls = callsInput.value;
+      render();
+    }
+
+    // ===== INPUT HANDLER: works for both percentage and calls =====
+    function handleInput(e) {
+      const pct = getVal(currentPctInput);
+      const calls = getVal(callsInput);
+
+      if (pct !== null && calls !== null && calls > 0) {
+        // Both fields filled — calculate exact release/drop
+        const result = calcFromPercentage(pct, calls);
+        stats.release = result.releases;
+        stats.drop = result.drops;
+      } else if (pct !== null) {
+        // Only percentage — redistribute current total
+        const currentTotal = stats.release + stats.drop;
+        if (currentTotal > 0) {
+          const result = calcFromPercentage(pct, currentTotal);
+          stats.release = result.releases;
+          stats.drop = result.drops;
+        }
+      } else if (calls !== null && calls > 0) {
+        // Only calls — scale current ratio to new total
+        const currentTotal = stats.release + stats.drop;
+        if (currentTotal > 0) {
+          const ratio = stats.release / currentTotal;
+          stats.release = Math.round(calls * ratio);
+          stats.drop = Math.max(0, calls - stats.release);
+        } else {
+          stats.release = calls;
+          stats.drop = 0;
+        }
+      } else if (calls === 0) {
+        stats.release = 0;
+        stats.drop = 0;
+      } else if (pct === null && calls === null) {
+        // Both fields cleared — reset stats to 0
+        stats.release = 0;
+        stats.drop = 0;
+      }
+
+      render();
+    }
+
+    // ===== RESET ALL =====
+    function resetAll() {
+      // Clear all stats
+      stats = { release: 0, drop: 0 };
+      expectedPct = '';
+      expectedCalls = '';
+      currentPctInput.value = '';
+      callsInput.value = '';
+      markManual(currentPctInput);
+      markManual(callsInput);
+      historyData = [];
+      if (miniChart) miniChart.innerHTML = '';
+      streakCount = 0;
+      lastDropIndex = -1;
+      eightyFiveTriggered = false;
+
+      // Reset daily goal to default
+      dailyGoal = 50;
+      document.getElementById('dailyGoalInput').value = 50;
+
+      // Clear all local storage data
+      localStorage.removeItem(SESSION_KEY);
+
+      // Reset all UI elements to initial state
+      // Reset ring
+      ringFill.style.strokeDashoffset = CIRCUMFERENCE;
+      ringFill.style.stroke = '#3b82f6';
+      ringSvg.className = 'score-ring-svg';
+      ringPercentage.style.color = '';
+      ringPercentage.textContent = '0.0%';
+      ringStatus.textContent = 'START';
+      ringStatus.style.background = '';
+      ringStatus.style.color = '';
+
+      // Reset target box
+      targetBox.className = 'target-box';
+      targetValue.textContent = 'Start tracking';
+      targetValue.style.color = '';
+      targetDetail.textContent = 'Enter metrics above to see your progress';
+
+      // Reset progress bar
+      progressFill.style.width = '0%';
+      progressFill.style.background = 'var(--accent-blue)';
+
+      // Reset summary
+      summaryTotal.textContent = '0';
+      summaryPassRate.textContent = '--';
+      summaryPassRate.style.color = 'var(--accent-blue)';
+      summaryDropRate.textContent = '--';
+
+      // Reset streak banner
+      document.getElementById('streakBanner').classList.remove('active');
+      document.getElementById('streakCount').textContent = '0';
+
+      // Reset goal progress
+      document.getElementById('goalProgressText').textContent = '0 / 50 calls';
+      document.getElementById('goalPercentText').textContent = '0%';
+      document.getElementById('goalProgressFill').style.width = '0%';
+      document.getElementById('goalProgressFill').style.background = 'var(--accent-blue)';
+      document.querySelectorAll('.goal-milestone').forEach(m => m.classList.remove('reached'));
+      document.getElementById('shiftGoalBadge').classList.add('hidden');
+
+      // Reset background orbs to blue
+      document.querySelector('.orb-1').className = 'bg-orb orb-1 orb-start';
+      document.querySelector('.orb-2').className = 'bg-orb orb-2 orb-start';
+      document.querySelector('.orb-3').className = 'bg-orb orb-3 orb-start';
+
+      // Reset app glow
+      document.getElementById('appGlow').className = 'app-glow';
+
+      // Reset stat displays without animation
+      releaseStatsEl.textContent = '0';
+      dropStatsEl.textContent = '0';
+      callsStatsEl.textContent = '0';
+
+      render();
+    }
+
+    // ===== EVENT LISTENERS =====
+    currentPctInput.addEventListener('input', handleInput);
+    currentPctInput.addEventListener('change', handleInput);
+    callsInput.addEventListener('input', handleInput);
+    callsInput.addEventListener('change', handleInput);
+
+    // Prevent scroll wheel on number inputs
+    [currentPctInput, callsInput].forEach(input => {
+      input.addEventListener('wheel', (e) => {
+        if (document.activeElement === input) {
+          e.preventDefault();
+        }
+      }, { passive: false });
+    });
+
+
+    // ===== LOGIN SYSTEM =====
+    const LOGIN_KEY = 'callQualityTracker_loggedIn';
+    const loginOverlay = document.getElementById('loginOverlay');
+    const loginUser = document.getElementById('loginUser');
+    const loginPass = document.getElementById('loginPass');
+    const loginBtn = document.getElementById('loginBtn');
+    const loginError = document.getElementById('loginError');
+
+    // Pre-fill defaults
+    loginUser.value = '';
+    loginPass.value = '';
+
+    // Login particles
+    const loginParticlesContainer = document.getElementById('loginParticles');
+    for (let i = 0; i < 20; i++) {
+      const p = document.createElement('div');
+      p.className = 'login-particle';
+      p.style.left = Math.random() * 100 + 'vw';
+      p.style.animationDelay = Math.random() * 12 + 's';
+      p.style.animationDuration = (8 + Math.random() * 8) + 's';
+      loginParticlesContainer.appendChild(p);
+    }
+
+    function attemptLogin() {
+      const user = loginUser.value.trim();
+      const pass = loginPass.value.trim();
+
+      if (user === 'metro' && pass === 'metro') {
+        localStorage.setItem(LOGIN_KEY, 'true');
+        loginOverlay.style.transition = 'opacity 0.5s ease';
+        loginOverlay.style.opacity = '0';
+        setTimeout(() => {
+          loginOverlay.classList.add('hidden');
+          loginOverlay.style.opacity = '';
+          loginOverlay.style.transition = '';
+          loginOverlay.style.display = '';
+          checkRestore();
+          render();
+        }, 500);
+      } else {
+        loginUser.classList.add('error');
+        loginPass.classList.add('error');
+        loginError.textContent = '❌ Invalid username or password';
+        loginError.classList.add('show');
+        setTimeout(() => {
+          loginUser.classList.remove('error');
+          loginPass.classList.remove('error');
+        }, 400);
+      }
+    }
+
+    // Enter key support
+    loginPass.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') attemptLogin();
+    });
+    loginUser.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') loginPass.focus();
+    });
+
+    // Clear error on input
+    [loginUser, loginPass].forEach(el => {
+      el.addEventListener('input', () => {
+        loginError.classList.remove('show');
+        el.classList.remove('error');
+      });
+    });
+
+    function checkLogin() {
+      if (localStorage.getItem(LOGIN_KEY) === 'true') {
+        loginOverlay.classList.add('hidden');
+        return true;
+      }
+      return false;
+    }
+
+    // ===== LOGOUT =====
+    function handleLogout() {
+      localStorage.removeItem(LOGIN_KEY);
+      // Reset any inline styles from previous login animation
+      loginOverlay.style.opacity = '';
+      loginOverlay.style.transition = '';
+      loginOverlay.style.display = '';
+      loginOverlay.classList.remove('hidden');
+      // Force reflow
+      void loginOverlay.offsetHeight;
+      // Now fade in
+      loginOverlay.style.opacity = '0';
+      loginOverlay.style.transition = 'opacity 0.4s ease';
+      requestAnimationFrame(() => {
+        loginOverlay.style.opacity = '1';
+      });
+      loginUser.value = '';
+      loginPass.value = '';
+      loginUser.focus();
+      loginError.classList.remove('show');
+    }
+
+    // ===== INIT =====
+    if (!checkLogin()) {
+      // Wait for login before initializing tracker
+    } else {
+      checkRestore();
+      render();
+    }
+  </script>
+</body>
+</html>
