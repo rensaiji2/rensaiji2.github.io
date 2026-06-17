@@ -846,10 +846,10 @@ function joinTeam() {
   const name = nameInput.value.trim();
   const team = teamIdInput.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-');
 
-  // Read token from config.js (loaded before app.js)
+  // Read token from input field (user enters manually)
   let token = '';
-  if (typeof TEAM_CONFIG !== 'undefined' && TEAM_CONFIG.githubToken) {
-    token = TEAM_CONFIG.githubToken.trim();
+  if (tokenInput && tokenInput.value) {
+    token = tokenInput.value.trim();
   }
 
   if (!name) {
@@ -899,6 +899,9 @@ function joinTeam() {
 
   localStorage.setItem('callTracker_userName', userName);
   localStorage.setItem('callTracker_teamId', teamId);
+  if (githubToken) {
+    localStorage.setItem('callTracker_githubToken', githubToken);
+  }
 
   nameOverlay.style.transition = 'opacity 0.5s ease';
   nameOverlay.style.opacity = '0';
@@ -1067,3 +1070,9 @@ if (savedName) {
   }
 }
 if (savedTeam) teamIdInput.value = savedTeam;
+
+// Load saved GitHub token
+const savedToken = localStorage.getItem('callTracker_githubToken');
+if (savedToken && tokenInput) {
+  tokenInput.value = savedToken;
+}
