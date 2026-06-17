@@ -1287,3 +1287,33 @@ body.glass-mode .sync-status {
     border-radius: 12px;
   }
 }
+
+
+/* ===== TOKEN INPUT ===== */
+#githubTokenInput {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+}
+
+.token-hint {
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: rgba(59,130,246,0.05);
+  border: 1px solid rgba(59,130,246,0.15);
+  border-radius: 10px;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+  text-align: left;
+}
+.token-hint a {
+  color: var(--accent-blue);
+  text-decoration: none;
+}
+.token-hint a:hover {
+  text-decoration: underline;
+}
+.token-hint strong {
+  color: var(--text-secondary);
+}
