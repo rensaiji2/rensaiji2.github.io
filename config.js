@@ -11,7 +11,7 @@ const TEAM_CONFIG = {
   // GitHub Token for real-time sync (optional - leave empty for local-only mode)
   // Get one at: https://github.com/settings/tokens/new (select "gist" scope only)
   // Paste the token below between the quotes, like: "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"
-  githubToken: "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",
+  githubToken: "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",
 
   // Sync interval in seconds (default: 10)
   syncInterval: 10
