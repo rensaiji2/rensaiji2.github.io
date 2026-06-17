@@ -37,6 +37,14 @@
         <input type="text" id="teamIdInput" class="name-input" placeholder="e.g. team-alpha" autocomplete="off" maxlength="30">
       </div>
 
+      <div class="name-input-group">
+        <label for="githubTokenInput">GitHub Token (optional - for team sync)</label>
+        <input type="password" id="githubTokenInput" class="name-input" placeholder="Paste your GitHub token here" autocomplete="off" maxlength="100">
+        <div class="token-hint">
+          <strong>Need a token?</strong> Get one at <a href="https://github.com/settings/tokens/new" target="_blank">github.com/settings/tokens/new</a> with <strong>"gist"</strong> scope. Leave empty for local-only mode.
+        </div>
+      </div>
+
       <button class="name-btn" id="joinBtn" onclick="joinTeam()">&#128640; Join Team</button>
       <div class="name-error-msg" id="nameError"></div>
 
@@ -371,7 +379,6 @@
 
   </div>
 
-  <script src="config.js"></script>
-  <script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
